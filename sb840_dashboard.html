@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SB840 Restrictive Covenants — El Paso, TX</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f2ec;
+    --surface: #ffffff;
+    --surface2: #f0ede6;
+    --text: #1a1814;
+    --text2: #6b6860;
+    --text3: #9b9890;
+    --accent: #c4441a;
+    --accent2: #2a5c8a;
+    --accent3: #2a7a4a;
+    --warn: #b85c00;
+    --border: rgba(26,24,20,0.12);
+    --border2: rgba(26,24,20,0.06);
+    --red: #c4441a;
+    --green: #2a7a4a;
+    --blue: #2a5c8a;
+    --amber: #b85c00;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--text);
+    color: #f5f2ec;
+    padding: 20px 32px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+  }
+  .header-left { display: flex; flex-direction: column; gap: 4px; }
+  .header-eyebrow {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(245,242,236,0.5);
+  }
+  .header-title {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+  .header-sub {
+    font-size: 13px;
+    color: rgba(245,242,236,0.6);
+    margin-top: 2px;
+  }
+  .header-badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 5px 10px;
+    border: 1px solid rgba(245,242,236,0.25);
+    border-radius: 4px;
+    color: rgba(245,242,236,0.7);
+    white-space: nowrap;
+  }
+
+  /* ── FILTER BAR ── */
+  .filter-bar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .filter-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text3);
+    white-space: nowrap;
+  }
+  .filter-group { display: flex; gap: 8px; flex-wrap: wrap; }
+  select {
+    font-family: var(--sans);
+    font-size: 12px;
+    color: var(--text);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 5px 10px;
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    padding-right: 24px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236b6860' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+  }
+  select:hover { border-color: rgba(26,24,20,0.25); }
+  .reset-btn {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    background: none;
+    border: 1px solid rgba(196,68,26,0.3);
+    border-radius: 4px;
+    padding: 5px 10px;
+    cursor: pointer;
+  }
+  .reset-btn:hover { background: rgba(196,68,26,0.06); }
+
+  /* ── LAYOUT ── */
+  .main { display: grid; grid-template-columns: 1fr 380px; height: calc(100vh - 130px); min-height: 600px; }
+
+  /* ── MAP ── */
+  #map { width: 100%; height: 100%; }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── STAT CARDS ── */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border2);
+    border-bottom: 1px solid var(--border);
+  }
+  .stat-card {
+    background: var(--surface);
+    padding: 16px;
+  }
+  .stat-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text3);
+    margin-bottom: 6px;
+  }
+  .stat-value {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .stat-sub {
+    font-size: 11px;
+    color: var(--text2);
+    margin-top: 4px;
+  }
+  .stat-value.red { color: var(--red); }
+  .stat-value.green { color: var(--green); }
+  .stat-value.blue { color: var(--blue); }
+  .stat-value.amber { color: var(--amber); }
+
+  /* ── CHART SECTIONS ── */
+  .section {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-title {
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text3);
+    margin-bottom: 12px;
+  }
+
+  /* ── BAR ITEMS ── */
+  .bar-item { margin-bottom: 10px; }
+  .bar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 4px;
+  }
+  .bar-name { font-size: 12px; color: var(--text); }
+  .bar-meta { font-family: var(--mono); font-size: 10px; color: var(--text2); }
+  .bar-track {
+    height: 4px;
+    background: var(--border2);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  /* ── LEGEND ── */
+  .legend-items { display: flex; flex-direction: column; gap: 6px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ── PROPERTY LIST ── */
+  .prop-list { display: flex; flex-direction: column; gap: 1px; background: var(--border2); }
+  .prop-item {
+    background: var(--surface);
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .prop-item:hover { background: var(--surface2); }
+  .prop-item.active { background: #f0f4f8; border-left: 3px solid var(--blue); }
+  .prop-name { font-size: 12px; font-weight: 500; margin-bottom: 2px; }
+  .prop-tags { display: flex; gap: 4px; flex-wrap: wrap; }
+  .tag {
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 2px 5px;
+    border-radius: 3px;
+  }
+  .tag-conflict { background: rgba(196,68,26,0.1); color: var(--red); }
+  .tag-ok { background: rgba(42,122,74,0.1); color: var(--green); }
+  .tag-has-cov { background: rgba(42,92,138,0.1); color: var(--blue); }
+  .tag-no-cov { background: rgba(155,152,144,0.1); color: var(--text3); }
+  .tag-sf { background: rgba(184,92,0,0.1); color: var(--amber); }
+
+  /* ── DONUT WRAPPER ── */
+  .donut-wrap { position: relative; width: 140px; height: 140px; margin: 0 auto; }
+  .donut-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+  .donut-pct { font-size: 22px; font-weight: 600; color: var(--text); }
+  .donut-lbl { font-family: var(--mono); font-size: 9px; color: var(--text3); text-transform: uppercase; }
+
+  /* ── POPUP ── */
+  .leaflet-popup-content-wrapper {
+    background: #1a1814;
+    color: #f5f2ec;
+    border-radius: 6px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    padding: 0;
+    font-family: var(--sans);
+  }
+  .leaflet-popup-content { margin: 0; }
+  .leaflet-popup-tip { background: #1a1814; }
+  .leaflet-popup-close-button { color: rgba(245,242,236,0.5) !important; top: 6px !important; right: 8px !important; }
+  .popup-inner { padding: 14px 16px; min-width: 220px; }
+  .popup-name { font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+  .popup-row { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
+  .popup-key { font-family: var(--mono); font-size: 10px; color: rgba(245,242,236,0.45); text-transform: uppercase; }
+  .popup-val { font-size: 11px; color: rgba(245,242,236,0.9); text-align: right; max-width: 140px; }
+  .popup-val.conflict { color: #f09090; }
+  .popup-val.ok { color: #90d4a0; }
+
+  /* ── SCROLLBAR ── */
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* ── UPLOAD BANNER ── */
+  .upload-banner {
+    background: rgba(42,92,138,0.08);
+    border: 1px dashed rgba(42,92,138,0.3);
+    border-radius: 6px;
+    padding: 10px 16px;
+    margin: 12px 16px;
+    font-size: 11px;
+    color: var(--blue);
+    text-align: center;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .upload-banner:hover { background: rgba(42,92,138,0.12); }
+  #file-input { display: none; }
+
+  .no-data {
+    padding: 32px 16px;
+    text-align: center;
+    color: var(--text3);
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="header-eyebrow">El Paso County · Texas · Housing Policy</div>
+    <div class="header-title">SB 840 Restrictive Covenants Dashboard</div>
+    <div class="header-sub">Covenant conflicts, land area impact, and restriction type analysis</div>
+  </div>
+  <div class="header-badge">SB 840 · 88th Legislature</div>
+</div>
+
+<div class="filter-bar">
+  <span class="filter-label">Filter</span>
+  <div class="filter-group">
+    <select id="f-covenant"><option value="">All — Covenant</option><option value="YES">Has Covenant</option><option value="NO">No Covenant</option></select>
+    <select id="f-conflict"><option value="">All — SB840 Conflict</option><option value="YES">Conflicts</option><option value="NO">No Conflict</option><option value="UNKNOWN">Unknown</option></select>
+    <select id="f-sf"><option value="">All — Single Family</option><option value="YES">SF Only</option><option value="NO">Not SF Only</option></select>
+    <select id="f-restriction"><option value="">All — Restriction Type</option></select>
+    <select id="f-year"><option value="">All — Filed Year</option></select>
+    <select id="f-expiry"><option value="">All — Expiration</option></select>
+  </div>
+  <button class="reset-btn" onclick="resetFilters()">Reset</button>
+  <label class="upload-banner" for="file-input" style="margin:0; padding: 5px 12px; font-size:11px; flex-shrink:0;">
+    ↑ Load GeoJSON
+    <input type="file" id="file-input" accept=".geojson,.json" onchange="loadGeoJSONFile(event)">
+  </label>
+</div>
+
+<div class="main">
+  <div id="map"></div>
+  <div class="sidebar">
+    <div class="stat-grid" id="stat-grid">
+      <div class="stat-card"><div class="stat-label">Total Parcels</div><div class="stat-value blue" id="s-total">—</div><div class="stat-sub">in selection</div></div>
+      <div class="stat-card"><div class="stat-label">With Covenant</div><div class="stat-value red" id="s-covenant">—</div><div class="stat-sub" id="s-covenant-pct">—</div></div>
+      <div class="stat-card"><div class="stat-label">SB840 Conflicts</div><div class="stat-value red" id="s-conflict">—</div><div class="stat-sub" id="s-conflict-pct">— of covenanted</div></div>
+      <div class="stat-card"><div class="stat-label">Total Acreage</div><div class="stat-value amber" id="s-acreage">—</div><div class="stat-sub" id="s-acreage-pct">— restricted</div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Covenant Coverage by Area</div>
+      <div style="display:flex; align-items:center; gap:16px;">
+        <div class="donut-wrap">
+          <canvas id="donut-chart" width="140" height="140"></canvas>
+          <div class="donut-center">
+            <div class="donut-pct" id="donut-pct">—</div>
+            <div class="donut-lbl">restricted</div>
+          </div>
+        </div>
+        <div class="legend-items" id="donut-legend"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Restriction Types</div>
+      <div id="restriction-bars"><div class="no-data">Load a GeoJSON file to begin</div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Filings by Year</div>
+      <div style="height:100px;"><canvas id="year-chart"></canvas></div>
+    </div>
+
+    <div class="section" style="border-bottom:none;">
+      <div class="section-title">Parcels (<span id="prop-count">0</span>)</div>
+      <div class="prop-list" id="prop-list"><div class="no-data">No data loaded</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════
+   SAMPLE DATA — embedded for demonstration
+   Replace by loading your SB840.GEOjson file
+   ═══════════════════════════════════════════ */
+const SAMPLE_GEOJSON = {
+  "type": "FeatureCollection",
+  "features": [
+    { "type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-106.485,31.775],[-106.480,31.775],[-106.480,31.780],[-106.485,31.780],[-106.485,31.775]]]},"properties":{"Name":"Sunset Ridge Estates","YR_FILED":1978,"COVENANT":"YES","Conflict840":"YES","RESTRICTIONS":"Single-family residential; no multi-family","SINGLE FAMILY ONLY":"YES","USE RESTRICTIONS":"Residential only","EXPIRATION YEAR":2050,"ACRES":45.2}},
+    { "type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-106.492,31.768],[-106.487,31.768],[-106.487,31.773],[-106.492,31.773],[-106.492,31.768]]]},"properties":{"Name":"Mesa Verde Subdivision","YR_FILED":1985,"COVENANT":"YES","Conflict840":"YES","RESTRICTIONS":"No duplexes; no apartments; single family only","SINGLE FAMILY ONLY":"YES","USE RESTRICTIONS":"Residential only; no commercial","EXPIRATION YEAR":2055,"ACRES":32.7}},
+    { "type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-106.500,31.780],[-106.495,31.780],[-106.495,31.786],[-106.500,31.786],[-106.500,31.780]]]},"properties":{"Name":"Cielo Vista Heights","YR_FILED":1992,"COVENANT":"YES","Conflict840":"NO","RESTRICTIONS":"Minimum lot size 6000 sqft","SINGLE FAMILY ONLY":"NO","USE RESTRICTIONS":"Residential; ADU permitted","EXPIRATION YEAR":2060,"ACRES":18.5}},
+    { "type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-106.508,31.772],[-106.503,31.772],[-106.503,31.778],[-106.508,31.778],[-106.508,31.772]]]},"properties":{"Name":"Rio Grande Flats","YR_FILED":2001,"COVENANT":"NO","Conflict840":"NO","RESTRICTIONS":"None","SINGLE FAMILY ONLY":"NO","USE RESTRICTIONS":"None","EXPIRATION YEAR":null,"ACRES":27.3}},
+    { "type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-106.475,31.760],[-106.470,31.760],[-106.470,31.766],[-106.475,31.766],[-106.475,31.760]]]},"properties":{"Name":"Coronado Hills","YR_FILED":1965,"COVENANT":"YES","Conflict840":"YES","RESTRICTIONS":"No multi-family; no commercial; single-family detached only","SINGLE FAMILY ONLY":"YES","USE RESTRICTIONS":"Residential detached only","EXPIRATION YEAR":2040,"ACRES":62.1}},
+    { "type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-106.515,31.765],[-106.510,31.765],[-106.510,31.771],[-106.515,31.771],[-106.515,31.765]]]},"properties":{"Name":"Franklin Mountain View","YR_FILED":1998,"COVENANT":"YES","Conflict840":"UNKNOWN","RESTRICTIONS":"Architectural controls; no manufactured homes","SINGLE FAMILY ONLY":"NO","USE RESTRICTIONS":"Residential","EXPIRATION YEAR":2048,"ACRES":14.8}},
+    { "type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-106.488,31.755],[-106.483,31.755],[-106.483,31.761],[-106.488,31.761],[-106.488,31.755]]]},"properties":{"Name":"Ysleta Traditional","YR_FILED":1955,"COVENANT":"YES","Conflict840":"YES","RESTRICTIONS":"Single-family use; no subdividing; no rental","SINGLE FAMILY ONLY":"YES","USE RESTRICTIONS":"Owner-occupied only","EXPIRATION YEAR":2030,"ACRES":38.9}},
+    { "type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-106.521,31.780],[-106.516,31.780],[-106.516,31.786],[-106.521,31.786],[-106.521,31.780]]]},"properties":{"Name":"Westside Commons","YR_FILED":2010,"COVENANT":"NO","Conflict840":"NO","RESTRICTIONS":"None","SINGLE FAMILY ONLY":"NO","USE RESTRICTIONS":"Mixed use permitted","EXPIRATION YEAR":null,"ACRES":8.4}},
+    { "type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-106.496,31.750],[-106.491,31.750],[-106.491,31.756],[-106.496,31.756],[-106.496,31.750]]]},"properties":{"Name":"El Paso Heights","YR_FILED":1972,"COVENANT":"YES","Conflict840":"YES","RESTRICTIONS":"Single-family residential; no commercial; no secondary units","SINGLE FAMILY ONLY":"YES","USE RESTRICTIONS":"Residential no ADU","EXPIRATION YEAR":2045,"ACRES":51.6}},
+    { "type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-106.479,31.790],[-106.474,31.790],[-106.474,31.796],[-106.479,31.796],[-106.479,31.790]]]},"properties":{"Name":"Northgate Terrace","YR_FILED":2005,"COVENANT":"YES","Conflict840":"NO","RESTRICTIONS":"Setbacks; landscaping standards","SINGLE FAMILY ONLY":"NO","USE RESTRICTIONS":"Residential; townhomes allowed","EXPIRATION YEAR":2065,"ACRES":22.0}},
+    { "type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-106.506,31.757],[-106.501,31.757],[-106.501,31.763],[-106.506,31.763],[-106.506,31.757]]]},"properties":{"Name":"Desert Palms","YR_FILED":1990,"COVENANT":"YES","Conflict840":"UNKNOWN","RESTRICTIONS":"No commercial vehicles; no accessory structures","SINGLE FAMILY ONLY":"NO","USE RESTRICTIONS":"Residential","EXPIRATION YEAR":2042,"ACRES":19.3}},
+    { "type":"Feature","geometry":{"type":"Polygon","coordinates":[[[-106.468,31.773],[-106.463,31.773],[-106.463,31.779],[-106.468,31.779],[-106.468,31.773]]]},"properties":{"Name":"Socorro Valley","YR_FILED":1968,"COVENANT":"YES","Conflict840":"YES","RESTRICTIONS":"Single-family detached; minimum 1200 sqft; no multi-family","SINGLE FAMILY ONLY":"YES","USE RESTRICTIONS":"Owner-occupied residential","EXPIRATION YEAR":2038,"ACRES":44.7}}
+  ]
+};
+
+/* ═══════════════════════════════════════════
+   STATE
+   ═══════════════════════════════════════════ */
+let rawData = null;
+let filteredFeatures = [];
+let geoLayer = null;
+let donutChart = null;
+let yearChart = null;
+let selectedId = null;
+
+/* ═══════════════════════════════════════════
+   MAP INIT
+   ═══════════════════════════════════════════ */
+const map = L.map('map', { zoomControl: true, attributionControl: false }).setView([31.770, -106.490], 12);
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+  attribution: '© OpenStreetMap © CARTO',
+  subdomains: 'abcd', maxZoom: 19
+}).addTo(map);
+
+L.control.attribution({ position: 'bottomleft', prefix: '© OpenStreetMap contributors © CARTO' }).addTo(map);
+
+/* ═══════════════════════════════════════════
+   COLOR LOGIC
+   ═══════════════════════════════════════════ */
+function featureColor(props) {
+  if (!props || props.COVENANT !== 'YES') return '#9b9890';
+  const c = (props.Conflict840 || '').toUpperCase();
+  if (c === 'YES') return '#c4441a';
+  if (c === 'NO') return '#2a7a4a';
+  return '#b85c00'; // UNKNOWN
+}
+
+function featureStyle(feature, isSelected) {
+  const color = featureColor(feature.properties);
+  return {
+    fillColor: color,
+    fillOpacity: isSelected ? 0.75 : 0.45,
+    color: isSelected ? color : color,
+    weight: isSelected ? 2.5 : 1,
+    opacity: 0.9
+  };
+}
+
+/* ═══════════════════════════════════════════
+   POPUP BUILDER
+   ═══════════════════════════════════════════ */
+function buildPopup(props) {
+  const conflictClass = props.Conflict840 === 'YES' ? 'conflict' : (props.Conflict840 === 'NO' ? 'ok' : '');
+  const acres = props.ACRES ? parseFloat(props.ACRES).toFixed(1) + ' ac' : '—';
+  const expiry = props['EXPIRATION YEAR'] || '—';
+  const restr = props.RESTRICTIONS || '—';
+  return `<div class="popup-inner">
+    <div class="popup-name">${props.Name || 'Unknown Parcel'}</div>
+    <div class="popup-row"><span class="popup-key">Covenant</span><span class="popup-val">${props.COVENANT || '—'}</span></div>
+    <div class="popup-row"><span class="popup-key">SB840 Conflict</span><span class="popup-val ${conflictClass}">${props.Conflict840 || '—'}</span></div>
+    <div class="popup-row"><span class="popup-key">Single Family</span><span class="popup-val">${props['SINGLE FAMILY ONLY'] || '—'}</span></div>
+    <div class="popup-row"><span class="popup-key">Use Restrictions</span><span class="popup-val">${props['USE RESTRICTIONS'] || '—'}</span></div>
+    <div class="popup-row"><span class="popup-key">Year Filed</span><span class="popup-val">${props.YR_FILED || '—'}</span></div>
+    <div class="popup-row"><span class="popup-key">Expires</span><span class="popup-val">${expiry}</span></div>
+    <div class="popup-row"><span class="popup-key">Area</span><span class="popup-val">${acres}</span></div>
+    <div style="margin-top:8px; padding-top:8px; border-top:1px solid rgba(245,242,236,0.1);">
+      <div class="popup-key" style="margin-bottom:3px;">Restrictions</div>
+      <div style="font-size:11px; color:rgba(245,242,236,0.75); line-height:1.5;">${restr}</div>
+    </div>
+  </div>`;
+}
+
+/* ═══════════════════════════════════════════
+   RENDER MAP LAYER
+   ═══════════════════════════════════════════ */
+function renderLayer(features) {
+  if (geoLayer) map.removeLayer(geoLayer);
+
+  const geojson = { type: 'FeatureCollection', features };
+  geoLayer = L.geoJSON(geojson, {
+    style: f => featureStyle(f, false),
+    onEachFeature: (feature, layer) => {
+      layer.bindPopup(buildPopup(feature.properties), { maxWidth: 280 });
+      layer.on('click', () => {
+        selectedId = feature.properties.Name;
+        highlightSelected();
+        highlightListItem(feature.properties.Name);
+      });
+      layer.on('mouseover', function() {
+        this.setStyle({ fillOpacity: 0.75, weight: 2.5 });
+        this.bringToFront();
+      });
+      layer.on('mouseout', function() {
+        const isSelected = feature.properties.Name === selectedId;
+        this.setStyle(featureStyle(feature, isSelected));
+      });
+    }
+  }).addTo(map);
+
+  if (features.length > 0) {
+    try { map.fitBounds(geoLayer.getBounds(), { padding: [20, 20] }); } catch(e){}
+  }
+}
+
+function highlightSelected() {
+  if (!geoLayer) return;
+  geoLayer.eachLayer(layer => {
+    const props = layer.feature?.properties;
+    layer.setStyle(featureStyle(layer.feature, props?.Name === selectedId));
+  });
+}
+
+/* ═══════════════════════════════════════════
+   SIDEBAR STATS
+   ═══════════════════════════════════════════ */
+function updateStats(features) {
+  const total = features.length;
+  const withCov = features.filter(f => f.properties.COVENANT === 'YES').length;
+  const conflicts = features.filter(f => f.properties.Conflict840 === 'YES').length;
+
+  const totalAcres = features.reduce((s, f) => s + (parseFloat(f.properties.ACRES) || 0), 0);
+  const restrictedAcres = features
+    .filter(f => f.properties.COVENANT === 'YES')
+    .reduce((s, f) => s + (parseFloat(f.properties.ACRES) || 0), 0);
+
+  document.getElementById('s-total').textContent = total;
+  document.getElementById('s-covenant').textContent = withCov;
+  document.getElementById('s-covenant-pct').textContent = total > 0 ? `${Math.round(withCov/total*100)}% of parcels` : '—';
+  document.getElementById('s-conflict').textContent = conflicts;
+  document.getElementById('s-conflict-pct').textContent = withCov > 0 ? `${Math.round(conflicts/withCov*100)}% of covenanted` : '—';
+  document.getElementById('s-acreage').textContent = totalAcres.toFixed(1);
+  document.getElementById('s-acreage-pct').textContent = totalAcres > 0 ? `${Math.round(restrictedAcres/totalAcres*100)}% restricted` : '—';
+
+  updateDonut(restrictedAcres, totalAcres - restrictedAcres, Math.round(totalAcres > 0 ? restrictedAcres/totalAcres*100 : 0));
+  updateRestrictionBars(features);
+  updateYearChart(features);
+  updatePropList(features);
+}
+
+/* ═══════════════════════════════════════════
+   DONUT CHART
+   ═══════════════════════════════════════════ */
+function updateDonut(restricted, unrestricted, pct) {
+  document.getElementById('donut-pct').textContent = pct + '%';
+
+  const ctx = document.getElementById('donut-chart').getContext('2d');
+  if (donutChart) donutChart.destroy();
+
+  donutChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Restricted', 'Unrestricted'],
+      datasets: [{ data: [restricted, unrestricted], backgroundColor: ['#c4441a', '#e8e4dc'], borderWidth: 0, hoverOffset: 4 }]
+    },
+    options: {
+      cutout: '72%',
+      plugins: { legend: { display: false }, tooltip: {
+        callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed.toFixed(1)} ac` }
+      }},
+      responsive: false,
+      animation: { duration: 500 }
+    }
+  });
+
+  document.getElementById('donut-legend').innerHTML = `
+    <div class="legend-item"><div class="legend-dot" style="background:#c4441a;"></div><span>Restricted<br><span style="font-family:var(--mono);font-size:10px;color:var(--text2)">${restricted.toFixed(1)} ac</span></span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:#e8e4dc;"></div><span>Unrestricted<br><span style="font-family:var(--mono);font-size:10px;color:var(--text2)">${unrestricted.toFixed(1)} ac</span></span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:#b85c00;"></div><span style="font-size:11px;">Unknown status</span></div>
+  `;
+}
+
+/* ═══════════════════════════════════════════
+   RESTRICTION BARS
+   ═══════════════════════════════════════════ */
+function updateRestrictionBars(features) {
+  const typeCounts = {};
+  const typeAcres = {};
+
+  features.forEach(f => {
+    const p = f.properties;
+    if (p.COVENANT !== 'YES') return;
+    const types = extractRestrictionTypes(p);
+    types.forEach(t => {
+      typeCounts[t] = (typeCounts[t] || 0) + 1;
+      typeAcres[t] = (typeAcres[t] || 0) + (parseFloat(p.ACRES) || 0);
+    });
+  });
+
+  const sorted = Object.entries(typeAcres).sort((a,b) => b[1]-a[1]);
+  const maxA = sorted.length ? sorted[0][1] : 1;
+  const colors = ['#c4441a','#2a5c8a','#b85c00','#2a7a4a','#6b6860'];
+
+  const container = document.getElementById('restriction-bars');
+  if (!sorted.length) {
+    container.innerHTML = '<div class="no-data">No covenanted parcels in selection</div>';
+    return;
+  }
+
+  container.innerHTML = sorted.slice(0,8).map(([ name, acres ], i) => `
+    <div class="bar-item">
+      <div class="bar-header">
+        <span class="bar-name">${name}</span>
+        <span class="bar-meta">${acres.toFixed(1)} ac · ${typeCounts[name]} parcel${typeCounts[name]>1?'s':''}</span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${Math.round(acres/maxA*100)}%;background:${colors[i%colors.length]};"></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function extractRestrictionTypes(props) {
+  const types = [];
+  const r = (props.RESTRICTIONS || '').toLowerCase();
+  const u = (props['USE RESTRICTIONS'] || '').toLowerCase();
+  if (props['SINGLE FAMILY ONLY'] === 'YES') types.push('Single-family only');
+  if (r.includes('no multi-family') || r.includes('multi family')) types.push('No multi-family');
+  if (r.includes('no apartment') || u.includes('no apartment')) types.push('No apartments');
+  if (r.includes('no commercial') || u.includes('no commercial')) types.push('No commercial use');
+  if (r.includes('no adu') || u.includes('no adu') || r.includes('no secondary') || r.includes('secondary unit')) types.push('No ADU/secondary unit');
+  if (r.includes('no rental') || u.includes('rental')) types.push('No rental');
+  if (r.includes('minimum lot') || r.includes('lot size')) types.push('Minimum lot size');
+  if (r.includes('setback') || r.includes('landscap') || r.includes('architectural')) types.push('Architectural/design controls');
+  if (r.includes('owner-occupied') || u.includes('owner-occupied')) types.push('Owner-occupied only');
+  if (r.includes('no manufactured') || r.includes('manufactured home')) types.push('No manufactured homes');
+  if (types.length === 0) types.push('Other restrictions');
+  return types;
+}
+
+/* ═══════════════════════════════════════════
+   YEAR CHART
+   ═══════════════════════════════════════════ */
+function updateYearChart(features) {
+  const yearCounts = {};
+  features.forEach(f => {
+    const yr = f.properties.YR_FILED;
+    if (yr) yearCounts[yr] = (yearCounts[yr] || 0) + 1;
+  });
+
+  const sortedYears = Object.keys(yearCounts).map(Number).sort();
+  const labels = sortedYears.map(String);
+  const values = sortedYears.map(y => yearCounts[y]);
+
+  const ctx = document.getElementById('year-chart').getContext('2d');
+  if (yearChart) yearChart.destroy();
+
+  yearChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ data: values, backgroundColor: '#2a5c8a', borderWidth: 0, borderRadius: 2 }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: {
+        callbacks: { title: ([item]) => 'Year: ' + item.label, label: item => ` ${item.raw} filing${item.raw>1?'s':''}` }
+      }},
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { family: "'IBM Plex Mono'", size: 9 }, color: '#9b9890', maxRotation: 45 } },
+        y: { grid: { color: 'rgba(26,24,20,0.05)' }, ticks: { font: { family: "'IBM Plex Mono'", size: 9 }, color: '#9b9890', stepSize: 1 } }
+      },
+      animation: { duration: 400 }
+    }
+  });
+}
+
+/* ═══════════════════════════════════════════
+   PROPERTY LIST
+   ═══════════════════════════════════════════ */
+function updatePropList(features) {
+  document.getElementById('prop-count').textContent = features.length;
+  const container = document.getElementById('prop-list');
+
+  if (!features.length) {
+    container.innerHTML = '<div class="no-data">No parcels match filters</div>';
+    return;
+  }
+
+  container.innerHTML = features.map(f => {
+    const p = f.properties;
+    const tags = [];
+    if (p.COVENANT === 'YES') tags.push(`<span class="tag tag-has-cov">Covenant</span>`);
+    else tags.push(`<span class="tag tag-no-cov">No Covenant</span>`);
+    if (p.Conflict840 === 'YES') tags.push(`<span class="tag tag-conflict">Conflicts SB840</span>`);
+    else if (p.Conflict840 === 'NO') tags.push(`<span class="tag tag-ok">Compliant</span>`);
+    if (p['SINGLE FAMILY ONLY'] === 'YES') tags.push(`<span class="tag tag-sf">SF Only</span>`);
+    const acres = p.ACRES ? parseFloat(p.ACRES).toFixed(1) + ' ac' : '';
+    return `<div class="prop-item${p.Name === selectedId ? ' active' : ''}" onclick="focusParcel('${(p.Name||'').replace(/'/g,"\\'")}')">
+      <div class="prop-name">${p.Name || 'Unknown'} ${acres ? `<span style="font-weight:400;color:var(--text3);font-size:11px;">· ${acres}</span>` : ''}</div>
+      <div class="prop-tags">${tags.join('')}</div>
+    </div>`;
+  }).join('');
+}
+
+function focusParcel(name) {
+  selectedId = name;
+  highlightSelected();
+  highlightListItem(name);
+
+  if (!geoLayer) return;
+  geoLayer.eachLayer(layer => {
+    if (layer.feature?.properties?.Name === name) {
+      map.fitBounds(layer.getBounds(), { padding: [60, 60], maxZoom: 15 });
+      layer.openPopup();
+    }
+  });
+}
+
+function highlightListItem(name) {
+  document.querySelectorAll('.prop-item').forEach(el => el.classList.remove('active'));
+  const items = document.querySelectorAll('.prop-item');
+  items.forEach(el => {
+    if (el.querySelector('.prop-name')?.textContent.startsWith(name)) el.classList.add('active');
+  });
+}
+
+/* ═══════════════════════════════════════════
+   FILTERS
+   ═══════════════════════════════════════════ */
+function populateFilters(features) {
+  const restrictions = new Set();
+  const years = new Set();
+  const expiry = new Set();
+
+  features.forEach(f => {
+    const p = f.properties;
+    extractRestrictionTypes(p).forEach(t => restrictions.add(t));
+    if (p.YR_FILED) years.add(p.YR_FILED);
+    if (p['EXPIRATION YEAR']) expiry.add(p['EXPIRATION YEAR']);
+  });
+
+  const rEl = document.getElementById('f-restriction');
+  rEl.innerHTML = '<option value="">All — Restriction Type</option>' +
+    [...restrictions].sort().map(r => `<option value="${r}">${r}</option>`).join('');
+
+  const yEl = document.getElementById('f-year');
+  yEl.innerHTML = '<option value="">All — Filed Year</option>' +
+    [...years].sort().map(y => `<option value="${y}">${y}</option>`).join('');
+
+  const eEl = document.getElementById('f-expiry');
+  eEl.innerHTML = '<option value="">All — Expiration</option>' +
+    [...expiry].sort().map(e => `<option value="${e}">${e}</option>`).join('');
+}
+
+function getFilters() {
+  return {
+    covenant: document.getElementById('f-covenant').value,
+    conflict: document.getElementById('f-conflict').value,
+    sf: document.getElementById('f-sf').value,
+    restriction: document.getElementById('f-restriction').value,
+    year: document.getElementById('f-year').value,
+    expiry: document.getElementById('f-expiry').value,
+  };
+}
+
+function applyFilters() {
+  if (!rawData) return;
+  const f = getFilters();
+
+  filteredFeatures = rawData.features.filter(feat => {
+    const p = feat.properties;
+    if (f.covenant && p.COVENANT !== f.covenant) return false;
+    if (f.conflict && (p.Conflict840 || '').toUpperCase() !== f.conflict) return false;
+    if (f.sf && p['SINGLE FAMILY ONLY'] !== f.sf) return false;
+    if (f.year && String(p.YR_FILED) !== f.year) return false;
+    if (f.expiry && String(p['EXPIRATION YEAR']) !== f.expiry) return false;
+    if (f.restriction) {
+      const types = extractRestrictionTypes(p);
+      if (!types.includes(f.restriction)) return false;
+    }
+    return true;
+  });
+
+  renderLayer(filteredFeatures);
+  updateStats(filteredFeatures);
+}
+
+function resetFilters() {
+  ['f-covenant','f-conflict','f-sf','f-restriction','f-year','f-expiry'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  applyFilters();
+}
+
+['f-covenant','f-conflict','f-sf','f-restriction','f-year','f-expiry'].forEach(id => {
+  document.getElementById(id).addEventListener('change', applyFilters);
+});
+
+/* ═══════════════════════════════════════════
+   LOAD DATA
+   ═══════════════════════════════════════════ */
+function loadData(geojson) {
+  rawData = geojson;
+  if (!rawData.features || !rawData.features.length) {
+    alert('GeoJSON loaded but contains no features.');
+    return;
+  }
+  populateFilters(rawData.features);
+  filteredFeatures = rawData.features;
+  renderLayer(filteredFeatures);
+  updateStats(filteredFeatures);
+}
+
+function loadGeoJSONFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const geojson = JSON.parse(e.target.result);
+      loadData(geojson);
+    } catch(err) {
+      alert('Could not parse GeoJSON file: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+/* ═══════════════════════════════════════════
+   BOOT with sample data
+   ═══════════════════════════════════════════ */
+loadData(SAMPLE_GEOJSON);
+</script>
+</body>
+</html>
