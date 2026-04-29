@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SB840 Analytics Dashboard</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+<style>
+body { margin:0; font-family:sans-serif; }
+#map { width:65%; height:100vh; float:left; }
+#sidebar {
+  width:35%;
+  height:100vh;
+  float:left;
+  overflow:auto;
+  padding:12px;
+  border-left:1px solid #ddd;
+}
+.chart-box { height:180px; margin-bottom:20px; }
+.stat { margin-bottom:8px; }
+</style>
+</head>
+
+<body>
+
+<div id="map"></div>
+
+<div id="sidebar">
+  <h3>SB840 Analytics</h3>
+
+  <div class="stat">Parcels: <b id="s-total">—</b></div>
+  <div class="stat">Covenants: <b id="s-cov">—</b></div>
+  <div class="stat">Conflicts: <b id="s-conflict">—</b></div>
+  <div class="stat">Acres: <b id="s-acres">—</b></div>
+
+  <hr>
+
+  <input type="file" id="file" accept=".geojson,.json">
+
+  <hr>
+
+  <h4>Filings by Year</h4>
+  <div class="chart-box"><canvas id="chart-year"></canvas></div>
+
+  <h4>Conflict Rate Over Time</h4>
+  <div class="chart-box"><canvas id="chart-conflict"></canvas></div>
+
+  <h4>Acreage by Decade</h4>
+  <div class="chart-box"><canvas id="chart-acre"></canvas></div>
+
+</div>
+
+<script>
+
+// ================= MAP =================
+const map = L.map('map').setView([31.76, -106.49], 12);
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
+
+let layer;
+
+// ================= NORMALIZE =================
+function normalize(f){
+  const p = f.properties || {};
+
+  const year = parseInt(String(p.YR_FILED).trim());
+
+  return {
+    ...f,
+    properties:{
+      Name: p.NAME || 'Unknown',
+      COVENANT: (p.COVENANT || '').toUpperCase().trim(),
+      Conflict840: (p.Conflict840 || '').toUpperCase().trim(),
+      ACRES: parseFloat(p.Acres) || 0,
+      YR_FILED: isNaN(year) ? null : year
+    }
+  };
+}
+
+// ================= LOAD =================
+function load(data){
+
+  data.features = data.features.map(normalize);
+
+  if(layer) map.removeLayer(layer);
+
+  layer = L.geoJSON(data, {
+    renderer: L.canvas(),
+    style:f=>({
+      color: color(f.properties),
+      fillOpacity:0.5
+    })
+  }).addTo(map);
+
+  const b = layer.getBounds();
+  if(b.isValid()) map.fitBounds(b);
+
+  updateStats(data.features);
+  updateCharts(data.features);
+}
+
+// ================= COLOR =================
+function color(p){
+  if(p.COVENANT!=='YES') return '#999';
+  if(p.Conflict840==='YES') return '#c4441a';
+  if(p.Conflict840==='NO') return '#2a7a4a';
+  return '#b85c00';
+}
+
+// ================= STATS =================
+function updateStats(f){
+  document.getElementById('s-total').innerText = f.length;
+  document.getElementById('s-cov').innerText = f.filter(x=>x.properties.COVENANT==='YES').length;
+  document.getElementById('s-conflict').innerText = f.filter(x=>x.properties.Conflict840==='YES').length;
+  document.getElementById('s-acres').innerText = f.reduce((s,x)=>s+x.properties.ACRES,0).toFixed(1);
+}
+
+// ================= CHARTS =================
+let chartYear, chartConflict, chartAcre;
+
+function updateCharts(f){
+
+  // ---------- YEAR COUNTS ----------
+  const byYear = {};
+  f.forEach(x=>{
+    const y = x.properties.YR_FILED;
+    if(!y) return;
+    byYear[y] = (byYear[y]||0)+1;
+  });
+
+  const years = Object.keys(byYear).sort((a,b)=>a-b);
+  const yearVals = years.map(y=>byYear[y]);
+
+  drawChart('chart-year', chartYear, (c)=> chartYear=c, years, yearVals, 'Filings');
+
+  // ---------- CONFLICT RATE ----------
+  const conflictData = {};
+  f.forEach(x=>{
+    const y = x.properties.YR_FILED;
+    if(!y) return;
+
+    if(!conflictData[y]) conflictData[y]={total:0,conflict:0};
+
+    conflictData[y].total++;
+    if(x.properties.Conflict840==='YES') conflictData[y].conflict++;
+  });
+
+  const years2 = Object.keys(conflictData).sort((a,b)=>a-b);
+  const rates = years2.map(y=>{
+    const d = conflictData[y];
+    return d.total ? (d.conflict/d.total*100) : 0;
+  });
+
+  drawChart('chart-conflict', chartConflict, (c)=> chartConflict=c, years2, rates, '% Conflict');
+
+  // ---------- ACREAGE BY DECADE ----------
+  const decadeData = {};
+  f.forEach(x=>{
+    const y = x.properties.YR_FILED;
+    if(!y) return;
+
+    const d = Math.floor(y/10)*10;
+    decadeData[d] = (decadeData[d]||0)+x.properties.ACRES;
+  });
+
+  const decades = Object.keys(decadeData).sort((a,b)=>a-b);
+  const acreVals = decades.map(d=>decadeData[d]);
+
+  drawChart('chart-acre', chartAcre, (c)=> chartAcre=c, decades, acreVals, 'Acres');
+}
+
+// ================= GENERIC DRAW =================
+function drawChart(id, existing, setter, labels, values, label){
+
+  const canvas = document.getElementById(id);
+  const ctx = canvas.getContext('2d');
+
+  if(existing) existing.destroy();
+
+  if(!labels.length){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.fillText("No data",10,50);
+    return;
+  }
+
+  const chart = new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels,
+      datasets:[{label,data:values}]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false
+    }
+  });
+
+  setter(chart);
+}
+
+// ================= FILE LOAD =================
+document.getElementById('file').addEventListener('change', e=>{
+  const reader = new FileReader();
+  reader.onload = x=>{
+    load(JSON.parse(x.target.result));
+  };
+  reader.readAsText(e.target.files[0]);
+});
+
+</script>
+</body>
+</html>
