@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SB840 Restrictive Covenants — El Paso, TX</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#f5f2ec; --surface:#fff; --surface2:#f0ede6;
+  --text:#1a1814; --text2:#6b6860; --text3:#9b9890;
+  --border:rgba(26,24,20,.12); --border2:rgba(26,24,20,.06);
+  --red:#c4441a; --green:#2a7a4a; --blue:#2a5c8a; --amber:#b85c00;
+  --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+}
+body { font-family:var(--sans); background:var(--bg); color:var(--text); min-height:100vh; }
+
+/* ── HEADER ── */
+.header { background:var(--text); color:#f5f2ec; padding:18px 28px; display:flex; align-items:flex-end; justify-content:space-between; gap:24px; }
+.header-eyebrow { font-family:var(--mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:rgba(245,242,236,.5); margin-bottom:4px; }
+.header-title { font-size:20px; font-weight:600; letter-spacing:-.02em; }
+.header-sub { font-size:12px; color:rgba(245,242,236,.6); margin-top:3px; }
+.header-badge { font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; padding:5px 10px; border:1px solid rgba(245,242,236,.25); border-radius:4px; color:rgba(245,242,236,.7); white-space:nowrap; text-decoration:none; }
+.header-badge:hover { background:rgba(245,242,236,.08); color:rgba(245,242,236,.95); }
+
+/* ── FILTER BAR ── */
+.filter-bar { background:var(--surface); border-bottom:1px solid var(--border); padding:10px 28px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.filter-label { font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:.1em; color:var(--text3); white-space:nowrap; }
+.filter-group { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+
+/* search bar */
+.search-wrap { position:relative; }
+.search-wrap input[type="text"] {
+  font-family:var(--sans); font-size:12px; color:var(--text); background:var(--surface2);
+  border:1px solid var(--border); border-radius:4px; padding:5px 10px 5px 28px;
+  width:200px; outline:none;
+}
+.search-wrap input:focus { border-color:var(--blue); }
+.search-wrap::before {
+  content:''; position:absolute; left:9px; top:50%; transform:translateY(-50%);
+  width:11px; height:11px;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Ccircle cx='6.5' cy='6.5' r='4.5' stroke='%239b9890' stroke-width='1.5'/%3E%3Cpath d='M10 10l3 3' stroke='%239b9890' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat center/contain;
+}
+.search-wrap .clear-search { position:absolute; right:7px; top:50%; transform:translateY(-50%); font-size:14px; color:var(--text3); cursor:pointer; display:none; line-height:1; padding:0 2px; }
+.search-wrap .clear-search:hover { color:var(--text); }
+
+select {
+  font-family:var(--sans); font-size:12px; color:var(--text); background:var(--surface2);
+  border:1px solid var(--border); border-radius:4px; padding:5px 24px 5px 10px; cursor:pointer;
+  outline:none; appearance:none; -webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236b6860' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 8px center;
+}
+select:hover { border-color:rgba(26,24,20,.25); }
+.year-range-group { display:flex; align-items:center; gap:4px; }
+.year-range-group input[type="number"] {
+  font-family:var(--mono); font-size:11px; color:var(--text); background:var(--surface2);
+  border:1px solid var(--border); border-radius:4px; padding:5px 8px; width:66px; outline:none;
+  -moz-appearance:textfield;
+}
+.year-range-group input::-webkit-inner-spin-button,
+.year-range-group input::-webkit-outer-spin-button { -webkit-appearance:none; }
+.year-range-group input:hover { border-color:rgba(26,24,20,.25); }
+.year-range-sep { font-family:var(--mono); font-size:10px; color:var(--text3); }
+.reset-btn { font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:.08em; color:var(--red); background:none; border:1px solid rgba(196,68,26,.3); border-radius:4px; padding:5px 10px; cursor:pointer; }
+.reset-btn:hover { background:rgba(196,68,26,.06); }
+
+/* ── LAYOUT ── */
+.main { display:grid; grid-template-columns:1fr 370px; height:calc(100vh - 120px); min-height:600px; }
+#map { width:100%; height:100%; position:relative; }
+
+/* ── MAP LEGEND ── */
+.map-legend { position:absolute; bottom:28px; left:12px; z-index:1000; background:rgba(255,255,255,.95); border:1px solid var(--border); border-radius:6px; padding:10px 12px; font-family:var(--sans); min-width:170px; pointer-events:none; }
+.map-legend-title { font-family:var(--mono); font-size:9px; text-transform:uppercase; letter-spacing:.1em; color:var(--text3); margin-bottom:8px; }
+.map-legend-item { display:flex; align-items:center; gap:7px; font-size:11px; color:var(--text); margin-bottom:5px; }
+.map-legend-item:last-child { margin-bottom:0; }
+.map-legend-swatch { width:12px; height:12px; border-radius:3px; flex-shrink:0; border:1px solid rgba(0,0,0,.12); }
+.map-legend-swatch.hatched { background: repeating-linear-gradient(45deg,#6b9db0,#6b9db0 2px,#b8d4de 2px,#b8d4de 5px); }
+
+/* ── SIDEBAR ── */
+.sidebar { background:var(--surface); border-left:1px solid var(--border); overflow-y:auto; display:flex; flex-direction:column; }
+.sidebar::-webkit-scrollbar { width:4px; }
+.sidebar::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+
+/* ── STAT CARDS ── */
+.stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--border2); border-bottom:1px solid var(--border); }
+.stat-card { background:var(--surface); padding:14px 16px; }
+.stat-label { font-family:var(--mono); font-size:9px; text-transform:uppercase; letter-spacing:.12em; color:var(--text3); margin-bottom:5px; }
+.stat-value { font-size:20px; font-weight:600; letter-spacing:-.02em; line-height:1; }
+.stat-sub { font-size:11px; color:var(--text2); margin-top:4px; }
+.stat-value.red   { color:var(--red); }
+.stat-value.green { color:var(--green); }
+.stat-value.blue  { color:var(--blue); }
+.stat-value.amber { color:var(--amber); }
+
+/* ── SECTIONS ── */
+.section { padding:14px 16px; border-bottom:1px solid var(--border); }
+.section-title { font-family:var(--mono); font-size:9px; text-transform:uppercase; letter-spacing:.12em; color:var(--text3); margin-bottom:10px; }
+
+/* ── DONUT ── */
+.donut-wrap { position:relative; width:130px; height:130px; margin:0 auto; }
+.donut-center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:none; }
+.donut-pct { font-size:20px; font-weight:600; color:var(--text); }
+.donut-lbl { font-family:var(--mono); font-size:9px; color:var(--text3); text-transform:uppercase; }
+.legend-items { display:flex; flex-direction:column; gap:6px; }
+.legend-item { display:flex; align-items:center; gap:8px; font-size:12px; }
+.legend-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+
+/* ── RESTRICTION BARS ── */
+.bar-item { margin-bottom:10px; }
+.bar-header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px; }
+.bar-name { font-size:12px; color:var(--text); }
+.bar-meta { font-family:var(--mono); font-size:10px; color:var(--text2); }
+.bar-track { height:4px; background:var(--border2); border-radius:2px; overflow:hidden; }
+.bar-fill { height:100%; border-radius:2px; transition:width .4s ease; }
+
+/* ── RESTRICTION COLOR CHIPS ── */
+.r-chip {
+  display:inline-block;
+  font-family:var(--mono); font-size:9px; text-transform:uppercase; letter-spacing:.05em;
+  padding:2px 6px; border-radius:3px; white-space:nowrap;
+  font-weight:500;
+}
+
+/* ── SUBDIVISION LIST ── */
+.subdiv-list { display:flex; flex-direction:column; gap:1px; background:var(--border2); }
+.subdiv-item { background:var(--surface); padding:10px 16px; cursor:pointer; transition:background .15s; }
+.subdiv-item:hover { background:var(--surface2); }
+.subdiv-item.active { background:#f0f4f8; border-left:3px solid var(--blue); }
+.subdiv-name { font-size:12px; font-weight:500; margin-bottom:4px; }
+.subdiv-tags { display:flex; gap:4px; flex-wrap:wrap; align-items:center; }
+
+.tag { font-family:var(--mono); font-size:9px; text-transform:uppercase; letter-spacing:.06em; padding:2px 5px; border-radius:3px; }
+.tag-conflict { background:rgba(196,68,26,.1);  color:var(--red); }
+.tag-ok       { background:rgba(42,122,74,.1);  color:var(--green); }
+.tag-has-cov  { background:rgba(42,92,138,.1);  color:var(--blue); }
+.tag-no-cov   { background:rgba(155,152,144,.1);color:var(--text3); }
+.tag-sf       { background:rgba(184,92,0,.1);   color:var(--amber); }
+
+/* ── POPUP ── */
+.leaflet-popup-content-wrapper { background:#1a1814 !important; color:#f5f2ec !important; border-radius:6px !important; box-shadow:0 4px 16px rgba(0,0,0,.3) !important; padding:0 !important; }
+.leaflet-popup-content { margin:0 !important; }
+.leaflet-popup-tip { background:#1a1814 !important; }
+.leaflet-popup-close-button { color:rgba(245,242,236,.5) !important; top:6px !important; right:8px !important; }
+.popup-inner { padding:14px 16px; min-width:220px; font-family:var(--sans); }
+.popup-name { font-size:13px; font-weight:600; margin-bottom:8px; border-bottom:1px solid rgba(245,242,236,.1); padding-bottom:8px; }
+.popup-row { display:flex; justify-content:space-between; gap:12px; margin-bottom:4px; }
+.popup-key { font-family:var(--mono); font-size:10px; color:rgba(245,242,236,.4); text-transform:uppercase; flex-shrink:0; }
+.popup-val { font-size:11px; color:rgba(245,242,236,.9); text-align:right; max-width:160px; }
+.popup-val.yes-v  { color:#7ecfa0; }
+.popup-val.no-v   { color:#f09090; }
+.popup-val.null-v { color:rgba(245,242,236,.3); font-style:italic; }
+
+.no-data { padding:24px 16px; text-align:center; color:var(--text3); font-size:12px; }
+
+/* ── LOADING ── */
+.loading-overlay { position:fixed; inset:0; background:rgba(245,242,236,.9); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:9999; gap:12px; }
+.loading-text { font-family:var(--mono); font-size:12px; color:var(--text2); letter-spacing:.08em; text-transform:uppercase; }
+.spinner { width:28px; height:28px; border:2px solid var(--border); border-top-color:var(--blue); border-radius:50%; animation:spin .7s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* hatched SVG pattern for map polygons */
+svg.leaflet-zoom-animated { overflow:visible; }
+</style>
+</head>
+<body>
+
+<div id="loading-overlay" class="loading-overlay">
+  <div class="spinner"></div>
+  <div class="loading-text">Loading subdivision data…</div>
+</div>
+
+<div class="header">
+  <div>
+    <div class="header-eyebrow">El Paso County · Texas · Housing Policy</div>
+    <div class="header-title">SB 840 Restrictive Covenants Dashboard</div>
+    <div class="header-sub">An analysis of conflicts between zoning, deed restrictions and State law</div>
+  </div>
+  <a class="header-badge" href="https://legiscan.com/TX/text/SB840/id/3246238" target="_blank" rel="noopener">SB 840 · 89th Legislature ↗</a>
+</div>
+
+<div class="filter-bar">
+  <span class="filter-label">Filter</span>
+  <div class="filter-group">
+    <!-- Search -->
+    <div class="search-wrap">
+      <input type="text" id="f-search" placeholder="Search subdivision or address…" autocomplete="off">
+      <span class="clear-search" id="search-clear" onclick="clearSearch()">×</span>
+    </div>
+
+    <select id="f-covenant">
+      <option value="">All — Covenant</option>
+      <option value="Y">Has Covenant</option>
+      <option value="N">No Covenant</option>
+    </select>
+    <select id="f-conflict">
+      <option value="">All — SB840 Conflict</option>
+      <option value="Y">Conflicts</option>
+      <option value="N">No Conflict</option>
+    </select>
+    <select id="f-sf">
+      <option value="">All — Single Family</option>
+      <option value="Y">SF Only</option>
+      <option value="N">Not SF Only</option>
+    </select>
+    <select id="f-restriction"><option value="">All — Restriction Type</option></select>
+
+    <!-- Filed year range -->
+    <div class="year-range-group">
+      <span class="year-range-sep">Filed</span>
+      <input type="number" id="f-year-min" placeholder="From" min="1900" max="2100">
+      <span class="year-range-sep">–</span>
+      <input type="number" id="f-year-max" placeholder="To"   min="1900" max="2100">
+    </div>
+
+    <!-- Expiration — year dropdown + PERPETUITY option -->
+    <select id="f-expiry"><option value="">All — Expiration</option></select>
+  </div>
+  <button class="reset-btn" onclick="resetFilters()">Reset</button>
+</div>
+
+<div class="main">
+  <div id="map">
+    <div class="map-legend" id="map-legend">
+      <div class="map-legend-title">Restriction Type</div>
+      <!-- populated dynamically -->
+    </div>
+  </div>
+  <div class="sidebar">
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-label">Total Subdivisions</div><div class="stat-value blue" id="s-total">—</div><div class="stat-sub">in selection</div></div>
+      <div class="stat-card"><div class="stat-label">With Covenant</div><div class="stat-value red" id="s-covenant">—</div><div class="stat-sub" id="s-covenant-pct">—</div></div>
+      <div class="stat-card"><div class="stat-label">SB840 Conflicts</div><div class="stat-value red" id="s-conflict">—</div><div class="stat-sub" id="s-conflict-pct">— of covenanted</div></div>
+      <div class="stat-card"><div class="stat-label">Total Acreage</div><div class="stat-value amber" id="s-acreage">—</div><div class="stat-sub" id="s-acreage-pct">— restricted</div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Covenant Coverage by Area</div>
+      <div style="display:flex;align-items:center;gap:16px;">
+        <div class="donut-wrap">
+          <canvas id="donut-chart" width="130" height="130"></canvas>
+          <div class="donut-center">
+            <div class="donut-pct" id="donut-pct">—</div>
+            <div class="donut-lbl">restricted</div>
+          </div>
+        </div>
+        <div class="legend-items" id="donut-legend"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Restriction Types (by area)</div>
+      <div id="restriction-bars"><div class="no-data">Loading…</div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Filings by Year</div>
+      <div style="height:90px;"><canvas id="year-chart"></canvas></div>
+    </div>
+
+    <div class="section" style="border-bottom:none;">
+      <div class="section-title">Subdivisions (<span id="subdiv-count">0</span>)</div>
+      <div class="subdiv-list" id="subdiv-list"><div class="no-data">Loading…</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- SVG defs for hatch pattern (Drainage) -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <pattern id="hatch-drainage" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="6" stroke="#6b9db0" stroke-width="2"/>
+    </pattern>
+  </defs>
+</svg>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   RESTRICTION COLOR MAP
+   Keys are lowercase-trimmed restriction strings.
+   Values: { fill, text, hatched? }
+═══════════════════════════════════════════════════════ */
+const RESTRICTION_COLORS = {
+  'any residential':                            { fill:'#2a7a4a', text:'#ffffff' },
+  'church only':                                { fill:'#2a5c8a', text:'#ffffff' },
+  'commercial only':                            { fill:'#c4441a', text:'#ffffff' },
+  'commercial or industrial':                   { fill:'#c4441a', text:'#ffffff' },
+  'drainage only':                              { fill:'#6b9db0', text:'#ffffff', hatched:true },
+  'duplex only':                                { fill:'#d4a017', text:'#1a1814' },
+  'industrial only':                            { fill:'#7b3fa0', text:'#ffffff' },
+  'medical only':                               { fill:'#2a5c8a', text:'#ffffff' },
+  'multifamily only':                           { fill:'#e07820', text:'#ffffff' },
+  'multifamily only (restricted unit count)':   { fill:'#e07820', text:'#ffffff' },
+  'multifamily and commercial':                 { fill:'#e07820', text:'#ffffff' },
+  'multifamily or commercial':                  { fill:'#e07820', text:'#ffffff' },
+  'no multifamily':                             { fill:'#d4a017', text:'#1a1814' },
+  'no restrictions':                            { fill:'#2a7a4a', text:'#ffffff' },
+  'nursery use only':                           { fill:'#c4441a', text:'#ffffff' },
+  'office only':                                { fill:'#c4441a', text:'#ffffff' },
+  'public building only':                       { fill:'#2a5c8a', text:'#ffffff' },
+  'quadplex only':                              { fill:'#d4a017', text:'#1a1814' },
+  'school only':                                { fill:'#2a5c8a', text:'#ffffff' },
+  'self-storage only':                          { fill:'#c4441a', text:'#ffffff' },
+  'senior living facility only':                { fill:'#2a5c8a', text:'#ffffff' },
+  'single family only':                         { fill:'#d4a017', text:'#1a1814' },
+  'skill nursing only':                         { fill:'#2a5c8a', text:'#ffffff' },
+  'up to duplex':                               { fill:'#d4a017', text:'#1a1814' },
+  'up to fiveplex':                             { fill:'#d4a017', text:'#1a1814' },
+  'up to quadplex':                             { fill:'#d4a017', text:'#1a1814' },
+  'utilities only':                             { fill:'#2a5c8a', text:'#ffffff' },
+};
+const DEFAULT_COLOR = { fill:'#9b9890', text:'#ffffff' };
+
+function getRestrictionColor(val) {
+  if (!val) return DEFAULT_COLOR;
+  return RESTRICTION_COLORS[val.trim().toLowerCase()] || DEFAULT_COLOR;
+}
+
+/* ── Chip HTML ── */
+function chipHtml(val) {
+  const c = getRestrictionColor(val);
+  const bg = c.hatched
+    ? 'repeating-linear-gradient(45deg,#6b9db0,#6b9db0 2px,#b8d4de 2px,#b8d4de 5px)'
+    : c.fill;
+  return `<span class="r-chip" style="background:${bg};color:${c.text};">${val || '—'}</span>`;
+}
+
+/* ═══════════════════════════════════════════════════════
+   NORMALISATION
+═══════════════════════════════════════════════════════ */
+function clean(v) {
+  if (v === null || v === undefined) return null;
+  const s = String(v).trim();
+  if (!s || /^<null>$/i.test(s) || /^null$/i.test(s) || /^n\/a$/i.test(s) || s==='undefined') return null;
+  return s;
+}
+function normalYN(v) {
+  const s = clean(v); if (!s) return null;
+  const u = s.toUpperCase();
+  if (u==='Y'||u==='YES'||u==='TRUE' ||u==='1') return 'Y';
+  if (u==='N'||u==='NO' ||u==='FALSE'||u==='0') return 'N';
+  return null;
+}
+function parseYear(v) {
+  const s = clean(v); if (!s) return null;
+  const n = parseInt(s,10);
+  return (!isNaN(n)&&n>1800&&n<2200) ? n : null;
+}
+function parseAcres(v) {
+  const s = clean(v); if (!s) return 0;
+  const n = parseFloat(s);
+  return (!isNaN(n)&&n>=0) ? n : 0;
+}
+function normalRestriction(v) {
+  const s = clean(v); if (!s) return null;
+  // Title-case normalise: match known keys case-insensitively
+  const lk = s.toLowerCase();
+  for (const k of Object.keys(RESTRICTION_COLORS)) {
+    if (k === lk) return s; // return original casing (display) if key matches
+  }
+  return s; // unknown — return as-is
+}
+
+function normaliseProps(p) {
+  p._name     = clean(p['NAME']) || 'Unnamed Subdivision';
+  p._yrFiled  = parseYear(p['YR_FILED']);
+  p._covenant = normalYN(p['COVENANT']);
+  p._conflict = normalYN(p['Conflict840']);
+  p._sf       = normalYN(p['SINGLE FAMILY ONLY']);
+  p._useRestr = clean(p['USE RESTRICTIONS']);
+  p._restr    = normalRestriction(p['RESTRICTIONS']);
+  // Expiration: preserve 'PERPETUITY' and other text values
+  const rawExp = clean(p['EXPIRATION YEAR']);
+  p._exprYear  = rawExp;            // string or null
+  p._exprNum   = parseYear(rawExp); // numeric if it's a year number
+  p._acres     = parseAcres(p['Acres']) || parseAcres(p['Shape_Area']) || 0;
+  p._address   = clean(p['ADDRESS']) || clean(p['CATALOG_']) || null;
+}
+
+/* ═══════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════ */
+let rawData=null, filteredFeatures=[], geoLayer=null;
+let donutChart=null, yearChart=null, selectedName=null;
+
+/* ═══════════════════════════════════════════════════════
+   MAP  — L.canvas() renderer
+═══════════════════════════════════════════════════════ */
+const canvasRenderer = L.canvas({ padding:0.5 });
+const map = L.map('map',{ zoomControl:true, attributionControl:false, renderer:canvasRenderer })
+              .setView([31.770,-106.490],11);
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
+  subdomains:'abcd', maxZoom:19
+}).addTo(map);
+L.control.attribution({ position:'bottomleft', prefix:'© OpenStreetMap contributors © CARTO' }).addTo(map);
+
+window.addEventListener('DOMContentLoaded',()=>{ map.getContainer().appendChild(document.getElementById('map-legend')); });
+
+/* ── Colour by restriction type (map polygons) ── */
+function featureMapColor(p) {
+  if (!p) return '#9b9890';
+  return getRestrictionColor(p._restr).fill;
+}
+
+function featureStyle(feature, selected) {
+  const color = featureMapColor(feature.properties);
+  const isHatch = getRestrictionColor(feature.properties._restr).hatched;
+  return {
+    renderer: canvasRenderer,
+    fillColor: isHatch ? '#6b9db0' : color,
+    fillOpacity: selected ? 0.85 : 0.55,
+    color: selected ? '#1a1814' : color,
+    weight: selected ? 2.5 : 0.8,
+    opacity: 0.9,
+    // Note: canvas renderer doesn't support SVG patterns; we use solid fill for drainage
+    dashArray: isHatch && !selected ? '4 3' : null
+  };
+}
+
+/* ── Build map legend from unique restriction types in data ── */
+function buildMapLegend(features) {
+  const seen = new Set();
+  features.forEach(f => { if (f.properties._restr) seen.add(f.properties._restr); });
+  const sorted = [...seen].sort();
+  const el = document.getElementById('map-legend');
+  el.innerHTML = '<div class="map-legend-title">Restriction Type</div>' +
+    sorted.map(r => {
+      const c = getRestrictionColor(r);
+      let swatchStyle;
+      if (c.hatched) {
+        swatchStyle = 'background:repeating-linear-gradient(45deg,#6b9db0,#6b9db0 2px,#b8d4de 2px,#b8d4de 5px);';
+      } else {
+        swatchStyle = `background:${c.fill};`;
+      }
+      return `<div class="map-legend-item">
+        <div class="map-legend-swatch${c.hatched?' hatched':''}" style="${swatchStyle}"></div>
+        <span>${r}</span>
+      </div>`;
+    }).join('');
+}
+
+/* ═══════════════════════════════════════════════════════
+   POPUP
+═══════════════════════════════════════════════════════ */
+function ynClass(v) { return v==='Y'?'yes-v':v==='N'?'no-v':'null-v'; }
+function ynLabel(v) { return v==='Y'?'Yes':v==='N'?'No':'—'; }
+function mv(v) { return (v===null||v===undefined)?'<span class="null-v">—</span>':v; }
+
+function buildPopup(p) {
+  const acres = p._acres>0 ? p._acres.toFixed(1)+' ac' : null;
+  const exprDisplay = p._exprYear || '—';
+  return `<div class="popup-inner">
+    <div class="popup-name">${p._name}</div>
+    <div class="popup-row"><span class="popup-key">Restriction</span><span class="popup-val">${p._restr ? chipHtml(p._restr) : '<span class="null-v">—</span>'}</span></div>
+    <div class="popup-row"><span class="popup-key">Covenant</span><span class="popup-val ${ynClass(p._covenant)}">${ynLabel(p._covenant)}</span></div>
+    <div class="popup-row"><span class="popup-key">SB840 Conflict</span><span class="popup-val ${ynClass(p._conflict)}">${ynLabel(p._conflict)}</span></div>
+    <div class="popup-row"><span class="popup-key">Single Family Only</span><span class="popup-val ${ynClass(p._sf)}">${ynLabel(p._sf)}</span></div>
+    <div class="popup-row"><span class="popup-key">Use Restrictions</span><span class="popup-val">${mv(p._useRestr)}</span></div>
+    <div class="popup-row"><span class="popup-key">Year Filed</span><span class="popup-val">${mv(p._yrFiled)}</span></div>
+    <div class="popup-row"><span class="popup-key">Expires</span><span class="popup-val">${exprDisplay}</span></div>
+    <div class="popup-row"><span class="popup-key">Area</span><span class="popup-val">${mv(acres)}</span></div>
+  </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════
+   RENDER MAP LAYER
+═══════════════════════════════════════════════════════ */
+function renderLayer(features) {
+  if (geoLayer) { map.removeLayer(geoLayer); geoLayer=null; }
+  geoLayer = L.geoJSON({ type:'FeatureCollection', features }, {
+    style: f => featureStyle(f, false),
+    onEachFeature: (feature, layer) => {
+      layer.bindPopup(()=>buildPopup(feature.properties), { maxWidth:290 });
+      layer.on('click', ()=>{
+        selectedName = feature.properties._name;
+        highlightSelected();
+        highlightListItem(feature.properties._name);
+      });
+      layer.on('mouseover', function(){ this.setStyle({ fillOpacity:0.85, weight:2 }); this.bringToFront(); });
+      layer.on('mouseout',  function(){ this.setStyle(featureStyle(feature, feature.properties._name===selectedName)); });
+    }
+  }).addTo(map);
+  if (features.length) { try { map.fitBounds(geoLayer.getBounds(),{ padding:[20,20] }); } catch(e){} }
+  buildMapLegend(features);
+}
+
+function highlightSelected() {
+  if (!geoLayer) return;
+  geoLayer.eachLayer(l=>{ if(l.feature) l.setStyle(featureStyle(l.feature, l.feature.properties._name===selectedName)); });
+}
+
+/* ═══════════════════════════════════════════════════════
+   STATS
+═══════════════════════════════════════════════════════ */
+function setText(id,v){ const e=document.getElementById(id); if(e) e.textContent=v; }
+
+function updateStats(features) {
+  const total     = features.length;
+  const withCov   = features.filter(f=>f.properties._covenant==='Y').length;
+  const conflicts = features.filter(f=>f.properties._conflict==='Y').length;
+  const totalAc   = features.reduce((s,f)=>s+f.properties._acres,0);
+  const restrAc   = features.filter(f=>f.properties._covenant==='Y').reduce((s,f)=>s+f.properties._acres,0);
+
+  setText('s-total',        total);
+  setText('s-covenant',     withCov);
+  setText('s-covenant-pct', total>0 ? Math.round(withCov/total*100)+'% of subdivisions' : '—');
+  setText('s-conflict',     conflicts);
+  setText('s-conflict-pct', withCov>0 ? Math.round(conflicts/withCov*100)+'% of covenanted' : '—');
+  setText('s-acreage',      totalAc>0 ? totalAc.toFixed(1) : '—');
+  setText('s-acreage-pct',  totalAc>0 ? Math.round(restrAc/totalAc*100)+'% restricted' : '—');
+
+  updateDonut(restrAc, totalAc-restrAc, totalAc>0?Math.round(restrAc/totalAc*100):0);
+  updateRestrictionBars(features);
+  updateYearChart(features);
+  updateSubdivList(features);
+}
+
+/* ── DONUT ── */
+function updateDonut(restricted, unrestricted, pct) {
+  document.getElementById('donut-pct').textContent = pct+'%';
+  const ctx = document.getElementById('donut-chart').getContext('2d');
+  if (donutChart) donutChart.destroy();
+  donutChart = new Chart(ctx,{
+    type:'doughnut',
+    data:{ labels:['Restricted','Unrestricted'], datasets:[{ data:[restricted,unrestricted], backgroundColor:['#c4441a','#e8e4dc'], borderWidth:0, hoverOffset:4 }] },
+    options:{ cutout:'72%', plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:c=>` ${c.label}: ${c.parsed.toFixed(1)} ac` } } }, responsive:false, animation:{duration:500} }
+  });
+  document.getElementById('donut-legend').innerHTML=`
+    <div class="legend-item"><div class="legend-dot" style="background:#c4441a;"></div><span>Restricted<br><span style="font-family:var(--mono);font-size:10px;color:var(--text2)">${restricted.toFixed(1)} ac</span></span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:#e8e4dc;"></div><span>Unrestricted<br><span style="font-family:var(--mono);font-size:10px;color:var(--text2)">${unrestricted.toFixed(1)} ac</span></span></div>`;
+}
+
+/* ── RESTRICTION BARS ── */
+function updateRestrictionBars(features) {
+  const counts={}, acres={};
+  features.forEach(f=>{
+    const r = f.properties._restr || 'Unknown';
+    counts[r]=(counts[r]||0)+1;
+    acres[r]=(acres[r]||0)+f.properties._acres;
+  });
+  const sorted=Object.entries(acres).sort((a,b)=>b[1]-a[1]);
+  const maxA=sorted.length?sorted[0][1]:1;
+  const el=document.getElementById('restriction-bars');
+  if (!sorted.length){ el.innerHTML='<div class="no-data">No data</div>'; return; }
+  el.innerHTML=sorted.map(([name,ac])=>{
+    const c=getRestrictionColor(name);
+    return `<div class="bar-item">
+      <div class="bar-header">
+        <span class="bar-name">${chipHtml(name)}</span>
+        <span class="bar-meta">${ac.toFixed(1)} ac · ${counts[name]}</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.round(ac/maxA*100)}%;background:${c.fill};"></div></div>
+    </div>`;
+  }).join('');
+}
+
+/* ── YEAR CHART ── */
+function updateYearChart(features) {
+  const yc={};
+  features.forEach(f=>{ const yr=f.properties._yrFiled; if(yr) yc[yr]=(yc[yr]||0)+1; });
+  const sy=Object.keys(yc).map(Number).sort();
+  const ctx=document.getElementById('year-chart').getContext('2d');
+  if (yearChart) yearChart.destroy();
+  if (!sy.length) return;
+  yearChart=new Chart(ctx,{
+    type:'bar',
+    data:{ labels:sy.map(String), datasets:[{ data:sy.map(y=>yc[y]), backgroundColor:'#2a5c8a', borderWidth:0, borderRadius:2 }] },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ title:([i])=>'Year: '+i.label, label:i=>` ${i.raw} filing${i.raw>1?'s':''}` } } },
+      scales:{
+        x:{ grid:{display:false}, ticks:{ font:{family:"'IBM Plex Mono'",size:9}, color:'#9b9890', maxRotation:45 } },
+        y:{ grid:{color:'rgba(26,24,20,.05)'}, ticks:{ font:{family:"'IBM Plex Mono'",size:9}, color:'#9b9890', stepSize:1 } }
+      },
+      animation:{duration:400}
+    }
+  });
+}
+
+/* ═══════════════════════════════════════════════════════
+   SUBDIVISION LIST
+═══════════════════════════════════════════════════════ */
+function updateSubdivList(features) {
+  setText('subdiv-count', features.length);
+  const el=document.getElementById('subdiv-list');
+  if (!features.length){ el.innerHTML='<div class="no-data">No subdivisions match filters</div>'; return; }
+  el.innerHTML=features.map(f=>{
+    const p=f.properties, tags=[];
+    if (p._covenant==='Y') tags.push(`<span class="tag tag-has-cov">Covenant</span>`);
+    else                   tags.push(`<span class="tag tag-no-cov">No Covenant</span>`);
+    if (p._conflict==='Y') tags.push(`<span class="tag tag-conflict">Conflicts SB840</span>`);
+    else if(p._conflict==='N') tags.push(`<span class="tag tag-ok">Compliant</span>`);
+    if (p._restr)          tags.push(chipHtml(p._restr));
+    const ac=p._acres>0?`· ${p._acres.toFixed(1)} ac`:'';
+    const nameEsc=p._name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `<div class="subdiv-item${p._name===selectedName?' active':''}" onclick="focusSubdiv('${nameEsc}')">
+      <div class="subdiv-name">${p._name} <span style="font-weight:400;color:var(--text3);font-size:11px;">${ac}</span></div>
+      <div class="subdiv-tags">${tags.join('')}</div>
+    </div>`;
+  }).join('');
+}
+
+function focusSubdiv(name) {
+  selectedName=name;
+  highlightSelected();
+  highlightListItem(name);
+  if (!geoLayer) return;
+  geoLayer.eachLayer(l=>{
+    if (l.feature?.properties?._name===name){
+      try { map.fitBounds(l.getBounds(),{ padding:[60,60], maxZoom:15 }); } catch(e){}
+      l.openPopup();
+    }
+  });
+}
+function highlightListItem(name) {
+  document.querySelectorAll('.subdiv-item').forEach(el=>{
+    const n=el.querySelector('.subdiv-name');
+    el.classList.toggle('active', n&&n.firstChild&&n.firstChild.textContent.trim()===name);
+  });
+}
+
+/* ═══════════════════════════════════════════════════════
+   SEARCH
+═══════════════════════════════════════════════════════ */
+function clearSearch() {
+  document.getElementById('f-search').value='';
+  document.getElementById('search-clear').style.display='none';
+  applyFilters();
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('f-search').addEventListener('input', function(){
+    document.getElementById('search-clear').style.display = this.value ? 'block' : 'none';
+    applyFilters();
+  });
+});
+
+/* ═══════════════════════════════════════════════════════
+   FILTERS
+═══════════════════════════════════════════════════════ */
+function populateFilters(features) {
+  // Restriction types — ALL unique values
+  const restrictions=new Set();
+  features.forEach(f=>{ if(f.properties._restr) restrictions.add(f.properties._restr); });
+  document.getElementById('f-restriction').innerHTML='<option value="">All — Restriction Type</option>'+
+    [...restrictions].sort().map(r=>`<option value="${r}">${r}</option>`).join('');
+
+  // Expiration — numeric years + text options (PERPETUITY, SEE NOTES, etc.)
+  const expiryNums=new Set(), expiryText=new Set();
+  features.forEach(f=>{
+    const e=f.properties._exprYear;
+    if (!e) return;
+    if (f.properties._exprNum) expiryNums.add(e);
+    else expiryText.add(e);
+  });
+  const numOpts=[...expiryNums].sort().map(e=>`<option value="${e}">${e}</option>`).join('');
+  const txtOpts=[...expiryText].sort().map(e=>`<option value="${e}">${e}</option>`).join('');
+  document.getElementById('f-expiry').innerHTML=
+    '<option value="">All — Expiration</option>'+numOpts+(txtOpts?'<optgroup label="─────">'+txtOpts+'</optgroup>':'');
+
+  // Year filed range hints
+  let minYr=Infinity, maxYr=-Infinity;
+  features.forEach(f=>{ const yr=f.properties._yrFiled; if(yr){ if(yr<minYr)minYr=yr; if(yr>maxYr)maxYr=yr; } });
+  if (minYr!==Infinity){
+    document.getElementById('f-year-min').placeholder='From '+minYr;
+    document.getElementById('f-year-max').placeholder='To '+maxYr;
+  }
+}
+
+function applyFilters() {
+  if (!rawData) return;
+  const covenant    = document.getElementById('f-covenant').value;
+  const conflict    = document.getElementById('f-conflict').value;
+  const sf          = document.getElementById('f-sf').value;
+  const restriction = document.getElementById('f-restriction').value;
+  const yearMin     = parseInt(document.getElementById('f-year-min').value,10)||null;
+  const yearMax     = parseInt(document.getElementById('f-year-max').value,10)||null;
+  const expiry      = document.getElementById('f-expiry').value;
+  const searchRaw   = document.getElementById('f-search').value.trim().toLowerCase();
+
+  filteredFeatures=rawData.features.filter(f=>{
+    const p=f.properties;
+    if (covenant    && p._covenant!==covenant) return false;
+    if (conflict    && p._conflict!==conflict) return false;
+    if (sf          && p._sf!==sf)             return false;
+    if (restriction && p._restr!==restriction) return false;
+    if (expiry      && p._exprYear!==expiry)   return false;
+    if (yearMin     && (p._yrFiled===null||p._yrFiled<yearMin)) return false;
+    if (yearMax     && (p._yrFiled===null||p._yrFiled>yearMax)) return false;
+    if (searchRaw) {
+      const nameMatch    = p._name.toLowerCase().includes(searchRaw);
+      const addressMatch = p._address && p._address.toLowerCase().includes(searchRaw);
+      if (!nameMatch && !addressMatch) return false;
+    }
+    return true;
+  });
+  renderLayer(filteredFeatures);
+  updateStats(filteredFeatures);
+}
+
+function resetFilters() {
+  ['f-covenant','f-conflict','f-sf','f-restriction','f-expiry'].forEach(id=>{ document.getElementById(id).value=''; });
+  document.getElementById('f-year-min').value='';
+  document.getElementById('f-year-max').value='';
+  document.getElementById('f-search').value='';
+  document.getElementById('search-clear').style.display='none';
+  applyFilters();
+}
+
+['f-covenant','f-conflict','f-sf','f-restriction','f-expiry'].forEach(id=>{
+  document.addEventListener('DOMContentLoaded',()=>{ document.getElementById(id).addEventListener('change',applyFilters); });
+});
+['f-year-min','f-year-max'].forEach(id=>{
+  document.addEventListener('DOMContentLoaded',()=>{ document.getElementById(id).addEventListener('input',applyFilters); });
+});
+
+/* ═══════════════════════════════════════════════════════
+   LOAD DATA  — from sb840_data.js (GEOJSON_DATA global)
+═══════════════════════════════════════════════════════ */
+function loadData(geojson) {
+  geojson.features=(geojson.features||[]).filter(f=>f&&f.geometry).map(f=>{
+    normaliseProps(f.properties||{});
+    return f;
+  });
+  rawData=geojson;
+  filteredFeatures=rawData.features;
+  populateFilters(filteredFeatures);
+  renderLayer(filteredFeatures);
+  updateStats(filteredFeatures);
+  document.getElementById('loading-overlay').style.display='none';
+}
+
+/* Boot — try common filenames for the GeoJSON source */
+window.addEventListener('DOMContentLoaded',()=>{
+  ['f-covenant','f-conflict','f-sf','f-restriction','f-expiry'].forEach(id=>{
+    document.getElementById(id).addEventListener('change',applyFilters);
+  });
+  ['f-year-min','f-year-max'].forEach(id=>{
+    document.getElementById(id).addEventListener('input',applyFilters);
+  });
+
+  // Try each candidate filename in order; use the first that responds OK
+  const CANDIDATES = [
+    '840output.GEOjson',
+    '840output.geojson',
+    'SB840.GEOjson',
+    'SB840.geojson',
+    'sb840_data.js'   // legacy fallback
+  ];
+
+  function tryNext(index) {
+    if (index >= CANDIDATES.length) {
+      document.getElementById('loading-overlay').innerHTML=`
+        <div style="text-align:center;padding:32px;max-width:440px;">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#c4441a;margin-bottom:12px;">Data file not found</div>
+          <div style="font-size:13px;color:#6b6860;line-height:1.7;">
+            Place <code style="background:#f0ede6;padding:2px 6px;border-radius:3px;font-size:12px;">840output.GEOjson</code>
+            in the same folder as this HTML file, then reload.
+          </div>
+        </div>`;
+      return;
+    }
+    fetch(CANDIDATES[index])
+      .then(r => { if (!r.ok) throw new Error('not found'); return r.json(); })
+      .then(loadData)
+      .catch(() => tryNext(index + 1));
+  }
+
+  tryNext(0);
+});
+</script>
+</body>
+</html>
